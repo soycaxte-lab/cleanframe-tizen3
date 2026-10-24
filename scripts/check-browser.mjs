@@ -101,7 +101,7 @@ async function page(options = {}) {
     else if (failure.error !== 'net::ERR_ABORTED') report.pageErrors.push(failure);
   });
   await current.addInitScript(installHarness, { mock: true, catalog: CATALOG, minuteMs: 60000, seed: baseline(), ...options });
-  await current.goto(preview.baseURL + '/home/');
+  await current.goto(preview.baseURL + '/home/' + (process.env.CLEANFRAME_LEGACY === '1' ? '?legacy=1' : ''));
   await ready();
   await current.waitForLoadState('networkidle');
   return current;
