@@ -1,0 +1,19 @@
+{
+  "name": "CleanFrame TV",
+  "storageKey": "cleanframe.tizen3.v1",
+  "artMode": false,
+  "homeAppId": "org.volt.firstscreen",
+  "settingsAppId": null,
+  "apps": [
+    {"id":"netflix","name":"Netflix","appId":"org.tizen.netflix-app"},
+    {"id":"youtube","name":"YouTube","appId":"9Ur5IzDKqV.TizenYouTube"},
+    {"id":"primevideo","name":"Prime Video","appId":"evKhCgZelL.AmazonIgnitionLauncher2"},
+    {"id":"spotify","name":"Spotify","appId":"rJeHak5zRg.Spotify"}
+  ],
+  "launchControls": {
+    "9Ur5IzDKqV.TizenYouTube": {
+      "operation":"http://tizen.org/appcontrol/operation/view",
+      "uri":"https://www.youtube.com/tv"
+    }
+  }
+}
