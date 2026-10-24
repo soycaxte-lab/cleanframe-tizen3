@@ -4,19 +4,23 @@
   "private": true,
   "description": "A personal, uncluttered home interface for Samsung The Frame.",
   "scripts": {
-    "dev": "python3 scripts/preview.py",
-    "check": "node --check app/main.js && node --check app/device.js && python3 scripts/check.py",
-    "package": "python3 scripts/package.py",
-    "tv:info": "python3 scripts/tv.py info",
-    "tv:install": "python3 scripts/tv.py install",
-    "tv:launch": "python3 scripts/tv.py launch",
+    "dev": "node scripts/run-python.cjs scripts/preview.py",
+    "check": "node --check app/main.js && node --check app/device.js && node --check app/tizen3.js && node scripts/run-python.cjs scripts/check.py && node scripts/check-es5.cjs",
+    "package": "node scripts/run-python.cjs scripts/package.py",
+    "tv:info": "node scripts/run-python.cjs scripts/tv.py info",
+    "tv:install": "node scripts/run-python.cjs scripts/tv.py install",
+    "tv:launch": "node scripts/run-python.cjs scripts/tv.py launch",
     "check:browser": "node scripts/check-browser.mjs",
-    "dev:public": "python3 scripts/preview.py --public-fonts",
-    "export:public": "python3 scripts/export-public.py",
-    "check:public": "python3 scripts/check-public.py"
+    "dev:public": "node scripts/run-python.cjs scripts/preview.py --public-fonts",
+    "export:public": "node scripts/run-python.cjs scripts/export-public.py",
+    "check:public": "node scripts/run-python.cjs scripts/check-public.py",
+    "build:tizen3": "node scripts/build-tizen3.cjs",
+    "check:tizen3": "node scripts/check-tizen3.mjs"
   },
   "devDependencies": {
-    "playwright": "1.64.1"
+    "acorn": "^8.19.0",
+    "playwright": "1.64.1",
+    "postcss": "^8.5.31"
   },
   "license": "MIT"
 }
