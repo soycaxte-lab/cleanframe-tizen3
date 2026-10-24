@@ -15,7 +15,9 @@
   var EXTRA_BRANDS = {'rJeHak5zRg.Spotify': 'spotify', '5b8c3eb16b.BeamCTVDev': 'hbomax', '3KA0pm7a7V.TubiTV': 'tubi'};
   var INTERNAL = ['adplatform.ADPlayer', 'WykOS4t4F0.cmsWebApp', '25emanual3.emanual',
     'ZODRT12q2l.WebAccountExtension', 'ByJlgt0XeD.CastSettingsApp', 'tv6pbVMQFF.PrivacyChoices'];
-  var SELF = 'nClrkHome1.FrameHome';
+  var PROFILE = window.CleanFrameProfile || null;
+  if (PROFILE && Array.isArray(PROFILE.apps)) PROFILE.apps.forEach(function (a) { IDS[a.id] = a.appId; });
+  var SELF = PROFILE && PROFILE.appId || 'nClrkHome1.FrameHome';
   function api() { return window.tizen && window.tizen.application; }
   function unavailable(done) {
     done({ message: 'Open CleanFrame on the TV to use this control.', detail: 'The web preview cannot control the TV.' });
@@ -31,6 +33,14 @@
   function launchApp(id, done) {
     if (!api()) { unavailable(done); return; }
     var finish = bounded(done);
+    var control = PROFILE && PROFILE.launchControls && PROFILE.launchControls[id];
+    if (control) {
+      try {
+        var request = new tizen.ApplicationControl(control.operation, control.uri || null, null, null);
+        api().launchAppControl(request, id, function () { finish(null); }, function (err) { finish(failure(err)); });
+      } catch (err) { finish(failure(err)); }
+      return;
+    }
     try { api().launch(id, function () { finish(null); }, function (err) { finish(failure(err)); }); }
     catch (err) { finish(failure(err)); }
   }
@@ -47,8 +57,11 @@
       api().launchAppControl(control, 'org.tizen.art-app', function () { finish(null); }, function (err) { finish(failure(err)); });
     } catch (err) { finish(failure(err)); }
   }
-  function home(done) { launchApp('com.samsung.tv.csfs', done); }
-  function settings(done) { launchApp('com.samsung.tv.coba.setting', done); }
+  function home(done) { launchApp(PROFILE && PROFILE.homeAppId || 'com.samsung.tv.csfs', done); }
+  function settings(done) {
+    if (PROFILE && PROFILE.settingsAppId === null) { done({message:'El acceso a los ajustes del sistema todavía no está verificado en este TV.'}); return; }
+    launchApp(PROFILE && PROFILE.settingsAppId || 'com.samsung.tv.coba.setting', done);
+  }
   function apps(done) {
     if (!api()) { unavailable(done); return; }
     var finish = bounded(done);

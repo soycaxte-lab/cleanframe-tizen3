@@ -24,6 +24,10 @@
     { id: 'sbs', name: 'SBS On Demand', mark: true, appId: 'OyE7OuxlUi.SBSOnDemand' },
     { id: 'applemusic', name: 'Apple Music', mark: true, appId: 'org.tizen.apple.apple-music' }
   ];
+  var DEVICE_PROFILE = window.CleanFrameProfile || null;
+  if (DEVICE_PROFILE && Array.isArray(DEVICE_PROFILE.apps) && DEVICE_PROFILE.apps.length && DEVICE_PROFILE.apps.length <= 9) {
+    PRIMARY_APPS = DEVICE_PROFILE.apps.map(function (a) { return { id: a.id, name: a.name, appId: a.appId, mark: true }; });
+  }
   var PRIMARY = PRIMARY_APPS.map(function (a) { return a.id; }), APPS = PRIMARY_APPS.slice(), ALPHA = [];
   var WALLS = window.CleanFrameWallpapers || [{ id: 'misty', name: 'Misty coast', tone: 'light', ut: { tr: 'mist', br: 'mist' }, frostVeil: .20 }];
   var ADAPTIVE_INK = window.CleanFrameAdaptiveInk || {};
@@ -33,7 +37,7 @@
     { id: '5', name: 'Every 5 minutes', min: 5 }, { id: '15', name: 'Every 15 minutes', min: 15 },
     { id: '60', name: 'Every hour', min: 60 }
   ];
-  var KEY = 'cleanframe.home.v1', storageOk = true, catalog = { loading: false, loaded: false, error: null, request: 0, revision: 0 };
+  var KEY = DEVICE_PROFILE && DEVICE_PROFILE.storageKey || 'cleanframe.home.v1', storageOk = true, catalog = { loading: false, loaded: false, error: null, request: 0, revision: 0 };
   var QA = window.ShoreQA = { minuteMs: window.ShoreQA && window.ShoreQA.minuteMs || 60000 };
   var FONTS = {
     manrope: { name: 'Manrope', family: 'Manrope', display: 600, ui: 500, clock: 500 },
@@ -315,7 +319,7 @@
   function safeId(id) { return typeof id === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]{0,160}$/.test(id) && ['constructor', 'prototype', '__proto__'].indexOf(id) < 0; }
   function safeIcon(path) { return typeof path === 'string' && path.length < 2048 && /^(?:\/[^\/]|file:\/\/\/|wgt-package:\/\/\/)/.test(path) ? path : ''; }
   function load() {
-    var keys = [KEY, 'cleanframe.shore.v1'], raw, saved, i;
+    var keys = DEVICE_PROFILE ? [KEY] : [KEY, 'cleanframe.shore.v1'], raw, saved, i;
     for (i = 0; i < keys.length; i++) {
       try {
         raw = localStorage.getItem(keys[i]);
@@ -491,7 +495,7 @@
   }
 
   /* ---------- Navigation targets ---------- */
-  function utils() { return ['art', 'apps', 'settings']; }
+  function utils() { return DEVICE_PROFILE && DEVICE_PROFILE.artMode === false ? ['apps', 'settings'] : ['art', 'apps', 'settings']; }
   /* prev/next run along the apps; out goes to the controls, inn comes back (or to a per-app action). */
   function axes() {
     var v = S.c.layout === 'list';
@@ -1000,12 +1004,12 @@
       var values = r ? { ink: r.ink, 'clock-ink': r.clockInk || r.ink, 'rest-ink': r.restInk, 'peer-ink': r.peerInk, rest: r.restAlpha, peer: r.peerAlpha, under: r.halo, shadow: r.shadow } : {};
       ['ink', 'clock-ink', 'rest-ink', 'peer-ink', 'rest', 'peer', 'under', 'shadow'].forEach(function (key) {
         var name = '--' + zone + '-' + key, value = values[key];
-        if (value !== undefined && value !== null) stage.style.setProperty(name, String(value));
-        else stage.style.removeProperty(name);
+        if (value !== undefined && value !== null) window.CleanFrameLegacy.set(stage, name, String(value));
+        else window.CleanFrameLegacy.set(stage, name, null);
       });
     });
-    if (active && palette.light) stage.style.setProperty('--home-app-ink', palette.light);
-    else stage.style.removeProperty('--home-app-ink');
+    if (active && palette.light) window.CleanFrameLegacy.set(stage, '--home-app-ink', palette.light);
+    else window.CleanFrameLegacy.set(stage, '--home-app-ink', null);
     return !!active;
   }
   function inkRungClasses(palette, active) {
@@ -1019,15 +1023,16 @@
     var t = top(), sheet = !!V[t.id].sheet, shown = wall(S.shown ? S.shown.wall : S.c.wall), palette = ADAPTIVE_INK[shown.id];
     var adaptive = applyAdaptiveInk(palette), tr = adaptive && palette.tr ? palette.tr.pol : shown.ut.tr, br = adaptive && palette.br ? palette.br.pol : shown.ut.br;
     stage.className = 'stage bg-' + S.c.bg + ' l-' + S.c.layout + ' v-' + S.variant + ' m-' + (materialApplies() ? S.c.material : 'none') + ' f-' + S.c.focus + ' a-' + S.c.apps + ' u-' + S.c.controls + ' g-' + S.geom + ' tone-' + shown.tone + ' tr-' + tr + ' br-' + br + wallClasses(shown) + inkRungClasses(palette, adaptive) + ' at-' + t.id + ' font-' + homeFont() + (homeFont() !== 'manrope' ? ' font-custom' : '') + (S.fontSwitch ? ' is-font-switch' : '') + (adaptive ? ' has-adaptive-ink adaptive-tl-' + palette.tl.pol : '') + (!adaptive && shown.clockInk ? ' has-clock-ink' : '') + (!adaptive && shown.dockClockInk ? ' has-dock-clock-ink' : '') + (registeredMaterial(shown.id) ? ' registered-material' : '') + (sheet ? ' is-sheet' : '') + (S.reflow ? ' is-reflow' : '');
-    if (!adaptive && shown.clockInk) stage.style.setProperty('--clock-ink', shown.clockInk);
-    else stage.style.removeProperty('--clock-ink');
-    if (!adaptive && shown.dockClockInk) stage.style.setProperty('--dock-clock-ink', shown.dockClockInk);
-    else stage.style.removeProperty('--dock-clock-ink');
+    if (!adaptive && shown.clockInk) window.CleanFrameLegacy.set(stage, '--clock-ink', shown.clockInk);
+    else window.CleanFrameLegacy.set(stage, '--clock-ink', null);
+    if (!adaptive && shown.dockClockInk) window.CleanFrameLegacy.set(stage, '--dock-clock-ink', shown.dockClockInk);
+    else window.CleanFrameLegacy.set(stage, '--dock-clock-ink', null);
     applyHomeFont();
     if (!sheet) renderHome(t);
     renderSheet(t, sheet);
     renderAppearance(t);
     renderFocusStatus(t);
+    window.CleanFrameLegacy.apply();
   }
 
   function applyHomeFont() {
@@ -1036,7 +1041,7 @@
     appliedFont = id; appliedFontMetrics = metrics;
     var values = { 'display-family': '"' + f.family + '"', 'ui-family': '"' + ui.family + '"', 'primary-family': '"' + primary.family + '"', 'display-weight': f.display, 'ui-weight': ui.weight, 'primary-weight': primary.weight, 'clock-weight': f.clock,
       'clock-shift': px(fontShift('clock', 48)), 'utility-shift': px(fontShift('ui', 28)), 'action-shift': px(fontShift('ui', 30)), 'heading-shift': px(fontShift('ui', 48)), 'full-name-shift': px(fontShift('primary', 30)), 'clock-digit': px(metrics ? metrics.digitCell : 0) };
-    Object.keys(values).forEach(function (key) { homeEl.style.setProperty('--font-' + key, String(values[key])); });
+    Object.keys(values).forEach(function (key) { window.CleanFrameLegacy.set(homeEl, '--font-' + key, String(values[key])); });
   }
 
   function homeState(t) {
@@ -1210,8 +1215,8 @@
 
     dock.className = 'dock' + (empty ? ' is-empty' : '');
     dock.style.left = g.x + 'px'; dock.style.top = g.y + 'px'; dock.style.width = g.w + 'px'; dock.style.height = g.h + 'px';
-    dock.style.setProperty('--tile-w', g.tw + 'px'); dock.style.setProperty('--tile-h', g.th + 'px'); dock.style.setProperty('--dock-h', g.h + 'px');
-    dock.style.setProperty('--nudge-top', ((g.th - 48) / 2) + 'px');
+    window.CleanFrameLegacy.set(dock, '--tile-w', g.tw + 'px'); window.CleanFrameLegacy.set(dock, '--tile-h', g.th + 'px'); window.CleanFrameLegacy.set(dock, '--dock-h', g.h + 'px');
+    window.CleanFrameLegacy.set(dock, '--nudge-top', ((g.th - 48) / 2) + 'px');
     dockAnchorCenter = g.x + 16 + anchor * g.pitch - off + g.tw / 2;
     IMG.mat.style.left = (-g.x) + 'px'; IMG.mat.style.top = (-g.y) + 'px';
     IMG.mat.style.transformOrigin = '960px ' + (g.y + g.h / 2) + 'px';
@@ -1684,11 +1689,11 @@
       render(); syncRotation();
       if (reflow) window.requestAnimationFrame(function () { window.requestAnimationFrame(function () {
         if (frame !== reflowToken) return;
-        S.reflow = false; stage.className = stage.className.replace(/\s+is-reflow/g, '');
+        S.reflow = false; stage.className = stage.className.replace(/\s+is-reflow/g, ''); window.CleanFrameLegacy.apply();
       }); });
       if (fontChanged) setTimeout(function () {
         if (fontFrame !== fontSwitchToken) return;
-        S.fontSwitch = false; stage.className = stage.className.replace(/\s+is-font-switch/g, '');
+        S.fontSwitch = false; stage.className = stage.className.replace(/\s+is-font-switch/g, ''); window.CleanFrameLegacy.apply();
       }, REDUCED_MOTION ? 130 : 170);
     }
     function fail(type, reason) {
@@ -1762,7 +1767,7 @@
   function updateClock() {
     clearTimeout(clockTimer);
     if (document.hidden) return;
-    if (top().id === 'home' || isSettingsDetail(top())) renderCaption(top(), homeState(top()));
+    if (top().id === 'home' || isSettingsDetail(top())) { renderCaption(top(), homeState(top())); window.CleanFrameLegacy.apply(); }
     clockTimer = setTimeout(updateClock, 60000 - (Date.now() % 60000) + 30);
   }
   function focusStage() { try { stage.focus({ preventScroll: true }); } catch (e) { stage.focus(); } }
